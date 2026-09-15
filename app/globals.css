@@ -3,9 +3,9 @@
 :root {
   --table: #e6e1d6;
   --table-lit: #ece8de;
-  --paper: #f7f3eb;
-  --paper-2: #efe9de;
-  --ink: #161513;
+  --paper: #f6f2ea;
+  --paper-2: #efe8dc;
+  --ink: #2c2924;
   --stripe: #8a3d36;
 }
 
@@ -32,7 +32,7 @@ body {
 }
 
 ::selection {
-  background: rgb(22 21 19 / 0.12);
+  background: rgb(44 41 36 / 0.12);
 }
 
 .table-top {
@@ -44,8 +44,93 @@ body {
   background: var(--paper);
   color: var(--ink);
   box-shadow:
-    0 0 0 1px rgb(22 21 19 / 0.06),
-    0 8px 24px rgb(22 21 19 / 0.06);
+    0 0 0 1px rgb(44 41 36 / 0.05),
+    0 8px 24px rgb(44 41 36 / 0.05);
+}
+
+.thermal-check {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--ink);
+  background:
+    radial-gradient(120% 70% at 50% -10%, #fbf8f2 0%, transparent 58%),
+    linear-gradient(168deg, #f7f3eb 0%, #f3eee4 46%, #efe8dc 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 0 48px rgb(70 55 40 / 0.045),
+    0 1px 1px rgb(50 40 30 / 0.05),
+    0 10px 22px rgb(50 40 30 / 0.07),
+    0 28px 56px rgb(50 40 30 / 0.1);
+}
+
+.thermal-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.thermal-fx__svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.thermal-fx__valleys {
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+}
+
+.thermal-fx__ridges {
+  opacity: 0.18;
+  mix-blend-mode: screen;
+}
+
+.thermal-fx__wrinkles {
+  opacity: 0.22;
+  mix-blend-mode: soft-light;
+}
+
+.thermal-fx__grain {
+  opacity: 0.075;
+  mix-blend-mode: multiply;
+}
+
+.thermal-fx__wash {
+  position: absolute;
+  inset: 0;
+  opacity: 0.68;
+  mix-blend-mode: soft-light;
+  background:
+    radial-gradient(
+      ellipse 95% 42% at 8% 3%,
+      rgb(255 255 255 / 0.52) 0%,
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 50% 22% at 92% 18%,
+      rgb(255 252 246 / 0.2) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 30% at 70% 92%,
+      rgb(48 40 32 / 0.1) 0%,
+      transparent 60%
+    );
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .thermal-fx__valleys,
+  .thermal-fx__ridges,
+  .thermal-fx__wrinkles,
+  .thermal-fx__grain,
+  .thermal-fx__wash {
+    opacity: 0;
+  }
 }
 
 .receipt-pad {
@@ -53,6 +138,8 @@ body {
 }
 
 .guest-check {
+  position: relative;
+  z-index: 1;
   padding: 2.35rem 1.7rem 2.1rem;
 }
 
@@ -60,7 +147,7 @@ body {
   flex: 1 1 0%;
   min-width: 1.25rem;
   margin: 0 0.45rem;
-  border-bottom: 1px dotted rgb(22 21 19 / 0.28);
+  border-bottom: 1px dotted rgb(44 41 36 / 0.3);
   transform: translateY(-0.32em);
 }
 

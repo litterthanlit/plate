@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThermalPaperFx } from "@/components/ThermalPaperFx";
 
 const ITEMS = [
   { n: "1", name: "find a place", href: "/places" },
@@ -12,8 +13,9 @@ export function ReceiptLanding() {
     <div className="table-top flex min-h-full flex-1 justify-center px-4 py-12 sm:py-20">
       <article
         aria-label="Plate guest check"
-        className="receipt w-full max-w-[23rem]"
+        className="thermal-check w-full max-w-[23rem]"
       >
+        <ThermalPaperFx />
         <div className="guest-check">
           <header className="text-center">
             <p className="text-[10px] font-medium tracking-[0.18em] text-ink/40">
@@ -34,7 +36,7 @@ export function ReceiptLanding() {
             <span className="text-right">Portland</span>
           </div>
 
-          <ul className="mt-8 space-y-2.5">
+          <ul className="mt-8 space-y-2.5 border-t border-dashed border-ink/20 pt-4">
             {ITEMS.map((item) => (
               <li key={item.name}>
                 <Link
@@ -54,7 +56,7 @@ export function ReceiptLanding() {
             date night / cheap / solo
           </p>
 
-          <div className="mt-9 border-t border-ink/20 pt-4">
+          <div className="mt-9 border-t border-dashed border-ink/25 pt-4">
             <div className="flex w-full items-baseline text-[13px] leading-6 text-ink/55">
               <span>Sub</span>
               <span className="leader" />
