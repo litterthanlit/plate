@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { IBM_Plex_Mono } from "next/font/google";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Plate",
@@ -20,8 +14,10 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlexMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-mono text-ink">
+    <html lang="en" className={`${GeistMono.variable} h-full`}>
+      <body
+        className={`${GeistMono.className} flex min-h-full flex-col bg-table text-ink antialiased`}
+      >
         {children}
       </body>
     </html>

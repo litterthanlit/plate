@@ -23,18 +23,18 @@ export function DiaryShell({
   return (
     <div className="table-top flex min-h-full flex-1 justify-center px-4 py-8 sm:py-12">
       <div className="receipt w-full max-w-[26rem]">
-        <header className="receipt-pad border-b border-dashed border-ink/30 pb-4">
+        <header className="receipt-pad border-b border-ink/12 pb-4">
           <div className="flex items-baseline justify-between">
-            <Link href="/" className="text-lg font-semibold tracking-[0.35em]">
+            <Link href="/" className="text-[15px] font-medium tracking-[0.18em]">
               PLATE
             </Link>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-ink/55">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink/50">
               {title}
             </span>
           </div>
           <nav
             aria-label="Diary"
-            className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.18em]"
+            className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-[11px] uppercase tracking-[0.12em]"
           >
             {LINKS.map((link) => {
               const active = pathname === link.href;
