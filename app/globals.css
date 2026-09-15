@@ -57,7 +57,7 @@ body {
 }
 
 .leader {
-  flex: 1 1 auto;
+  flex: 1 1 0%;
   min-width: 1.25rem;
   margin: 0 0.45rem;
   border-bottom: 1px dotted rgb(22 21 19 / 0.28);

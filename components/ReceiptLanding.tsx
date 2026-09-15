@@ -55,12 +55,12 @@ export function ReceiptLanding() {
           </p>
 
           <div className="mt-9 border-t border-ink/20 pt-4">
-            <div className="flex items-baseline text-[13px] leading-6 text-ink/55">
+            <div className="flex w-full items-baseline text-[13px] leading-6 text-ink/55">
               <span>Sub</span>
               <span className="leader" />
               <span>honest, local</span>
             </div>
-            <div className="mt-1.5 flex items-baseline text-[14px] font-medium leading-6">
+            <div className="mt-1.5 flex w-full items-baseline text-[14px] font-medium leading-6">
               <span>Total</span>
               <span className="leader" />
               <span>your taste, nearby</span>
