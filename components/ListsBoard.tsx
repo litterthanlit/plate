@@ -38,8 +38,10 @@ export function ListsBoard() {
                       <p>{place.name}</p>
                       <p className="text-[10px] uppercase tracking-[0.14em] text-ink/45">
                         {place.neighborhood}
-                        {latest.note ? ` · ${latest.note}` : ""}
                       </p>
+                      {latest.note ? (
+                        <p className="mt-1 text-sm text-ink/70">{latest.note}</p>
+                      ) : null}
                     </div>
                     <span className="text-sm tracking-widest">
                       {stars(latest.rating)}
