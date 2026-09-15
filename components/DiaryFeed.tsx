@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { formatVisitTime } from "@/lib/diary";
+import { PlaceMeta } from "@/components/PlaceMeta";
 import { findPlace } from "@/lib/places";
 import { useDiary } from "@/lib/use-diary";
 import { StarRating } from "@/components/StarRating";
@@ -45,10 +46,8 @@ export function DiaryFeed() {
                 {formatVisitTime(visit.createdAt)}
               </time>
             </div>
-            <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink/45">
-              {place
-                ? `${place.neighborhood} · ${place.cuisine}`
-                : "removed from the book"}
+            <p className="mt-0.5 text-[11px] text-ink/45">
+              {place ? <PlaceMeta place={place} /> : "removed from the book"}
             </p>
             <div className="mt-2">
               <StarRating value={visit.rating} label={`${visit.rating} stars`} />

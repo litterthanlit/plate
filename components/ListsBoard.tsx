@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PlaceMeta } from "@/components/PlaceMeta";
 import { placesOnList } from "@/lib/diary";
 import { LISTS } from "@/lib/lists";
 import { stars } from "@/lib/diary";
@@ -36,8 +37,8 @@ export function ListsBoard() {
                   >
                     <div>
                       <p>{place.name}</p>
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-ink/45">
-                        {place.neighborhood}
+                      <p className="mt-0.5">
+                        <PlaceMeta place={place} />
                       </p>
                       {latest.note ? (
                         <p className="mt-1 text-sm text-ink/70">{latest.note}</p>

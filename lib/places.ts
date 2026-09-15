@@ -114,9 +114,13 @@ export function searchPlaces(places: readonly Place[], query: string): Place[] {
   if (!needle) return [...places];
   return places.filter((place) => {
     const haystack =
-      `${place.name} ${place.neighborhood} ${place.cuisine}`.toLowerCase();
+      `${place.name} ${place.neighborhood} ${place.cuisine} ${place.address ?? ""}`.toLowerCase();
     return haystack.includes(needle);
   });
+}
+
+export function isSavedPlace(place: Place): boolean {
+  return Boolean(place.custom || place.googlePlaceId);
 }
 
 export function findPlace(
