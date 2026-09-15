@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+:root {
+  --table: #14110e;
+  --table-lit: #2a2218;
+  --paper: #f3e6c4;
+  --paper-2: #ead9b0;
+  --ink: #1c150f;
+  --stripe: #c43b32;
+}
+
+@theme inline {
+  --color-table: var(--table);
+  --color-table-lit: var(--table-lit);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-stripe: var(--stripe);
+  --font-sans: var(--font-ibm-plex-mono);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background: var(--table);
+  color: var(--ink);
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+}
+
+.table-top {
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--table-lit) 0%, transparent 52%),
+    var(--table);
+}
+
+.receipt {
+  position: relative;
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    rgb(28 21 15 / 0.045) 28px
+  );
+  color: var(--ink);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.35) inset,
+    0 18px 50px rgb(0 0 0 / 0.45);
+}
+
+.receipt::before,
+.receipt::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: radial-gradient(circle, var(--table) 6px, transparent 6.5px);
+  background-size: 12px 12px;
+  pointer-events: none;
+}
+
+.receipt::before {
+  top: -6px;
+}
+
+.receipt::after {
+  bottom: -6px;
+  transform: rotate(180deg);
+}
+
+.receipt-stripe {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 8px;
+  background: var(--stripe);
+}
+
+.receipt-pad {
+  padding: 1.75rem 1.5rem 1.5rem 1.7rem;
+}
+
+.leader {
+  flex: 1 1 auto;
+  border-bottom: 1px dotted rgb(28 21 15 / 0.45);
+  transform: translateY(-4px);
+}
+
+.stamp-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.8rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.stamp-btn:hover {
+  background: transparent;
+  color: var(--ink);
+}
+
+.stamp-btn:disabled {
+  opacity: 0.55;
+}
+
+.barcode {
+  height: 42px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0 2px,
+    transparent 2px 4px,
+    var(--ink) 4px 5px,
+    transparent 5px 9px,
+    var(--ink) 9px 13px,
+    transparent 13px 15px
+  );
+}
