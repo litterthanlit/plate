@@ -21,7 +21,7 @@ export function DiaryShell({
   const pathname = usePathname();
 
   return (
-    <div className="table-top flex min-h-full flex-1 justify-center px-4 py-8 sm:py-12">
+    <div className="table-top flex min-h-full flex-1 items-start justify-center px-4 py-8 sm:py-12">
       <div className="receipt w-full max-w-[26rem]">
         <header className="receipt-pad border-b border-ink/12 pb-4">
           <div className="flex items-baseline justify-between">

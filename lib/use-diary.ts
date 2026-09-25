@@ -9,7 +9,8 @@ import {
   saveVisits,
 } from "./storage";
 import type { ListId, Place, Visit } from "./types";
-import { NOTE_MAX, RATING_MAX, RATING_MIN } from "./types";
+import { NOTE_MAX, RATING_MAX, RATING_MIN, SPEND_MAX_CENTS } from "./types";
+import { sortVisits } from "./diary";
 
 const EMPTY_VISITS: Visit[] = [];
 const EMPTY_PLACES: Place[] = [];
@@ -84,7 +85,12 @@ export type NewVisitInput = {
   rating: number;
   note: string;
   listIds: ListId[];
+  visitedAt: number;
+  spendCents: number | null;
 };
+
+/** A minute of slack so "now" from the form never reads as the future. */
+const FUTURE_SLACK_MS = 60_000;
 
 function subscribeToNothing() {
   return () => {};
@@ -174,15 +180,31 @@ export function useDiary() {
     ) {
       throw new Error("Rate 1 to 5");
     }
+    if (!Number.isFinite(input.visitedAt)) {
+      throw new Error("Pick when you ate");
+    }
+    if (input.visitedAt > Date.now() + FUTURE_SLACK_MS) {
+      throw new Error("That meal hasn't happened yet");
+    }
+    if (
+      input.spendCents !== null &&
+      (!Number.isInteger(input.spendCents) ||
+        input.spendCents < 0 ||
+        input.spendCents > SPEND_MAX_CENTS)
+    ) {
+      throw new Error("Check the bill amount");
+    }
     const visit: Visit = {
       id: newId("v"),
       placeId: input.placeId,
       rating: input.rating,
       note: input.note.trim().slice(0, NOTE_MAX),
       listIds: input.listIds,
+      visitedAt: input.visitedAt,
+      spendCents: input.spendCents,
       createdAt: Date.now(),
     };
-    visitsStore.set([visit, ...visitsStore.getSnapshot()]);
+    visitsStore.set(sortVisits([visit, ...visitsStore.getSnapshot()]));
     return visit;
   }, []);
 

@@ -1,96 +1,146 @@
+"use client";
+
 import Link from "next/link";
-import { ThermalPaperFx } from "@/components/ThermalPaperFx";
+import { Barcode } from "@/components/Barcode";
+import { ReceiptRow, Rule, ThermalReceipt } from "@/components/ThermalReceipt";
+import { METRO, SEED_PLACES } from "@/lib/places";
+import { usePrintStamp } from "@/lib/use-print-stamp";
 
 const ITEMS = [
-  { n: "1", name: "find a place", href: "/places" },
-  { n: "1", name: "log a visit", href: "/log" },
-  { n: "1", name: "rate + short note", href: "/log" },
-  { n: "1", name: "stash on lists", href: "/lists" },
+  {
+    name: "FIND A PLACE",
+    mod: `${SEED_PLACES.length} spots, ${METRO}`,
+    href: "/places",
+  },
+  { name: "LOG A VISIT", mod: "date, time, what it cost", href: "/log" },
+  { name: "RATE + SHORT NOTE", mod: "1-5 stars, 140 chars", href: "/log" },
+  { name: "STASH ON LISTS", mod: "date night / cheap / solo", href: "/lists" },
+] as const;
+
+const TOTALS = [
+  { label: "SUBTOTAL", value: "0.00" },
+  { label: "BOOKING FEE", value: "NONE" },
+  { label: "DELIVERY", value: "NONE" },
+  { label: "TAX 0%", value: "0.00" },
 ] as const;
 
 export function ReceiptLanding() {
+  const stamp = usePrintStamp();
+
   return (
-    <div className="table-top flex min-h-full flex-1 justify-center px-4 py-12 sm:py-20">
-      <article
-        aria-label="Plate guest check"
-        className="thermal-check w-full max-w-[23rem]"
-      >
-        <ThermalPaperFx />
-        <div className="guest-check">
-          <header className="text-center">
-            <p className="text-[10px] font-medium tracking-[0.18em] text-ink/40">
-              GUEST CHECK
-            </p>
-            <h1 className="mt-4 text-[1.35rem] font-medium leading-none tracking-[0.22em]">
-              PLATE
-            </h1>
-            <p className="mt-2.5 text-[11px] tracking-[0.14em] text-ink/50">
-              meals out
-            </p>
-          </header>
+    <div className="table-top flex min-h-full flex-1 items-start justify-center px-4 py-12 sm:py-20">
+      <ThermalReceipt label="Plate guest check">
+        <header className="text-center">
+          <h1 className="print-double text-[1.5rem] font-bold leading-none">
+            PLATE
+          </h1>
+          <p className="mt-3">DIARY FOR MEALS OUT</p>
+          <p className="thermal-faint">PORTLAND, OR · EST. 2026</p>
+          <p className="thermal-faint">DATA STAYS ON THIS DEVICE</p>
+        </header>
 
-          <div className="mt-10 grid grid-cols-2 gap-y-1 text-[11px] leading-5 tracking-[0.04em] text-ink/55">
-            <span>Chk 0041</span>
-            <span className="text-right">Tbl 12</span>
-            <span>Server: you</span>
-            <span className="text-right">Portland</span>
+        <Rule double className="mt-4" />
+
+        <dl className="grid grid-cols-2 tabular-nums">
+          <div className="flex gap-2">
+            <dt>CHK</dt>
+            <dd>{stamp.check}</dd>
           </div>
-
-          <ul className="mt-8 space-y-2.5 border-t border-dashed border-ink/20 pt-4">
-            {ITEMS.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className="flex items-baseline text-[14px] leading-[1.65] text-ink/90 hover:text-ink focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ink"
-                >
-                  <span className="w-5 tabular-nums text-[12px] text-ink/40">
-                    {item.n}
-                  </span>
-                  <span>{item.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          <p className="mt-3 pl-5 text-[11px] leading-5 tracking-[0.04em] text-ink/40">
-            date night / cheap / solo
-          </p>
-
-          <div className="mt-9 border-t border-dashed border-ink/25 pt-4">
-            <div className="flex w-full items-baseline text-[13px] leading-6 text-ink/55">
-              <span>Sub</span>
-              <span className="leader" />
-              <span>honest, local</span>
-            </div>
-            <div className="mt-1.5 flex w-full items-baseline text-[14px] font-medium leading-6">
-              <span>Total</span>
-              <span className="leader" />
-              <span>your taste, nearby</span>
-            </div>
+          <div className="flex justify-end gap-2">
+            <dt>TBL</dt>
+            <dd>12</dd>
           </div>
-
-          <div className="mt-10 space-y-3">
-            <Link href="/log" className="stamp-btn">
-              Start a diary
-            </Link>
-            <Link
-              href="/diary"
-              className="block text-center text-[11px] tracking-[0.1em] text-ink/50 hover:text-ink focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              Get the app
-            </Link>
+          <div className="flex gap-2">
+            <dt>SVR</dt>
+            <dd>YOU</dd>
           </div>
+          <div className="flex justify-end gap-2">
+            <dt>GST</dt>
+            <dd>1</dd>
+          </div>
+          <div className="col-span-2 flex justify-between">
+            <dt className="sr-only">Printed</dt>
+            <dd>{stamp.date}</dd>
+            <dd>{stamp.time}</dd>
+          </div>
+        </dl>
 
-          <p className="mt-10 text-center text-[10px] tracking-[0.12em] text-ink/35">
-            thank you
-          </p>
-          <p className="mt-2 text-center text-[10px] leading-5 tracking-[0.06em] text-ink/35">
-            no booking · no delivery
-            <br />
-            just where you ate
-          </p>
+        <Rule className="mt-1" />
+
+        <div className="flex thermal-faint" aria-hidden="true">
+          <span className="w-7">QTY</span>
+          <span className="flex-1">ITEM</span>
+          <span>AMT</span>
         </div>
-      </article>
+
+        <ul className="mt-1 space-y-1">
+          {ITEMS.map((item) => (
+            <li key={item.name}>
+              <Link
+                href={item.href}
+                className="receipt-line group flex items-baseline"
+              >
+                <span className="w-7 tabular-nums">1</span>
+                <span className="flex-1 group-hover:underline group-hover:underline-offset-2">
+                  {item.name}
+                </span>
+                <span className="tabular-nums">0.00</span>
+              </Link>
+              {item.mod ? (
+                <p className="thermal-faint pl-7">&gt; {item.mod}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+
+        <Rule className="mt-3" />
+
+        <dl>
+          {TOTALS.map((row) => (
+            <ReceiptRow key={row.label} left={row.label} right={row.value} />
+          ))}
+        </dl>
+
+        <Rule double className="mt-1" />
+
+        <dl>
+          <ReceiptRow
+            left="TOTAL"
+            right="$0.00"
+            className="print-double-tall text-[14px] font-bold"
+          />
+          <ReceiptRow left="YOU GET" right="YOUR TASTE, NEARBY" className="mt-1" />
+        </dl>
+
+        <Rule className="mt-3" />
+
+        <div className="mt-4 space-y-3">
+          <Link href="/log" className="stamp-btn">
+            Start a diary
+          </Link>
+          <Link href="/diary" className="receipt-line block text-center">
+            OPEN YOUR DIARY &gt;
+          </Link>
+        </div>
+
+        <Rule className="mt-4" />
+
+        <footer className="text-center">
+          <p className="mt-2 font-bold">*** THANK YOU ***</p>
+          <p className="mt-1 thermal-faint">
+            NO BOOKING · NO DELIVERY
+            <br />
+            JUST WHERE YOU ATE
+          </p>
+          <div className="mx-auto mt-5 w-4/5">
+            <Barcode value={stamp.barcode} />
+            <p className="mt-1 tracking-[0.3em] tabular-nums">
+              {stamp.barcode}
+            </p>
+          </div>
+          <p className="mt-4 thermal-faint">CUSTOMER COPY</p>
+        </footer>
+      </ThermalReceipt>
     </div>
   );
 }
