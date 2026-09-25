@@ -1,6 +1,7 @@
+import { sortVisits } from "./diary";
 import { isListId } from "./lists";
 import type { ListId, Place, Visit } from "./types";
-import { NOTE_MAX, RATING_MAX, RATING_MIN } from "./types";
+import { NOTE_MAX, RATING_MAX, RATING_MIN, SPEND_MAX_CENTS } from "./types";
 
 const VISITS_KEY = "plate:visits:v1";
 const PLACES_KEY = "plate:places:v1";
@@ -37,6 +38,12 @@ function parsePlace(value: unknown): Place | null {
   };
 }
 
+function parseSpendCents(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value)) return null;
+  if (value < 0 || value > SPEND_MAX_CENTS) return null;
+  return value;
+}
+
 function parseVisit(value: unknown): Visit | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || value.id.length === 0) return null;
@@ -57,6 +64,12 @@ function parseVisit(value: unknown): Visit | null {
     rating: value.rating,
     note: value.note.slice(0, NOTE_MAX),
     listIds: parseListIds(value.listIds),
+    // v1 visits predate these fields: the log time was the visit time.
+    visitedAt:
+      typeof value.visitedAt === "number" && Number.isFinite(value.visitedAt)
+        ? value.visitedAt
+        : value.createdAt,
+    spendCents: parseSpendCents(value.spendCents),
     createdAt: value.createdAt,
   };
 }
@@ -80,7 +93,7 @@ export function loadVisits(): Visit[] {
     const visit = parseVisit(item);
     if (visit) visits.push(visit);
   }
-  return visits.sort((a, b) => b.createdAt - a.createdAt);
+  return sortVisits(visits);
 }
 
 export function saveVisits(visits: Visit[]): void {
