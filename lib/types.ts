@@ -28,6 +28,8 @@ export type Visit = {
   /** What the bill came to, tip in, in cents. Null when not recorded. */
   spendCents: number | null;
   createdAt: number;
+  /** Set when the visit was edited after logging. */
+  updatedAt?: number;
 };
 
 export const NOTE_MAX = 140;

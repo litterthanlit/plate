@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 import { Barcode } from "@/components/Barcode";
 import { ReceiptRow, Rule, ThermalReceipt } from "@/components/ThermalReceipt";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/lib/diary";
 import { listLabel } from "@/lib/lists";
 import { METRO, findPlace } from "@/lib/places";
+import type { Visit } from "@/lib/types";
 import { useDiary } from "@/lib/use-diary";
 
 const DATE = new Intl.DateTimeFormat("en-US", {
@@ -25,6 +27,13 @@ const TIME = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+/** How long the VOID stamp sits on the paper before the check is pulled. */
+const VOID_STAMP_MS = 750;
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function Page({ children }: { children: ReactNode }) {
   return (
     <div className="table-top flex min-h-full flex-1 items-start justify-center px-4 py-12 sm:py-20">
@@ -34,7 +43,23 @@ function Page({ children }: { children: ReactNode }) {
 }
 
 export function VisitReceipt({ id }: { id: string }) {
-  const { ready, visits, places } = useDiary();
+  const router = useRouter();
+  const { ready, visits, places, voidVisit } = useDiary();
+  const [confirming, setConfirming] = useState(false);
+  /** Snapshot of the visit being voided, so the paper stays up under the stamp. */
+  const [voiding, setVoiding] = useState<Visit | null>(null);
+
+  useEffect(() => {
+    if (!voiding) return;
+    const timer = window.setTimeout(
+      () => {
+        voidVisit(voiding.id);
+        router.push("/diary");
+      },
+      prefersReducedMotion() ? 0 : VOID_STAMP_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [voiding, voidVisit, router]);
 
   if (!ready) {
     return (
@@ -44,7 +69,8 @@ export function VisitReceipt({ id }: { id: string }) {
     );
   }
 
-  const visit = visits.find((v) => v.id === id);
+  const visit =
+    visits.find((v) => v.id === id) ?? (voiding?.id === id ? voiding : undefined);
 
   if (!visit) {
     return (
@@ -79,6 +105,11 @@ export function VisitReceipt({ id }: { id: string }) {
   return (
     <Page>
       <ThermalReceipt label={`Check for ${place?.name ?? "a visit"} on ${date}`}>
+        {voiding ? (
+          <p className="void-stamp" role="status">
+            VOID
+          </p>
+        ) : null}
         <header className="text-center">
           <p className="print-double text-[13px] font-bold leading-none">
             PLATE
@@ -119,6 +150,9 @@ export function VisitReceipt({ id }: { id: string }) {
             <dd>{time}</dd>
           </div>
         </dl>
+        {visit.updatedAt ? (
+          <p className="mt-1 text-center font-bold">** REPRINT **</p>
+        ) : null}
 
         <Rule className="mt-1" />
 
@@ -198,9 +232,56 @@ export function VisitReceipt({ id }: { id: string }) {
           >
             Log another here
           </Link>
-          <Link href="/diary" className="receipt-line block text-center">
-            &lt; BACK TO DIARY
-          </Link>
+          <div className="flex items-baseline justify-between">
+            <Link href="/diary" className="receipt-line">
+              &lt; DIARY
+            </Link>
+            <Link
+              href={`/diary/${encodeURIComponent(visit.id)}/edit`}
+              className="receipt-line"
+            >
+              EDIT
+            </Link>
+            {confirming ? null : (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                disabled={voiding !== null}
+                className="receipt-line"
+              >
+                VOID
+              </button>
+            )}
+          </div>
+          {confirming ? (
+            <div
+              role="group"
+              aria-label="Confirm void"
+              className="border border-dashed border-current p-3 text-center"
+            >
+              <p>VOID THIS CHECK?</p>
+              <p className="thermal-faint">You can undo from the diary.</p>
+              <div className="mt-2 flex justify-center gap-6">
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => setVoiding(visit)}
+                  disabled={voiding !== null}
+                  className="receipt-line font-bold"
+                >
+                  YES, VOID
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  disabled={voiding !== null}
+                  className="receipt-line"
+                >
+                  KEEP
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <Rule className="mt-4" />

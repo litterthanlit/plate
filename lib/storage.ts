@@ -99,6 +99,9 @@ function parseVisit(value: unknown): Visit | null {
         : value.createdAt,
     spendCents: parseSpendCents(value.spendCents),
     createdAt: value.createdAt,
+    ...(typeof value.updatedAt === "number" && Number.isFinite(value.updatedAt)
+      ? { updatedAt: value.updatedAt }
+      : {}),
   };
 }
 
