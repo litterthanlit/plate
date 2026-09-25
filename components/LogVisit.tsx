@@ -84,7 +84,7 @@ export function LogVisit() {
         selected={selected}
         onSelect={setPicked}
         onClear={() => setPicked(null)}
-        onCreate={(name) => addPlace({ name })}
+        onCreate={addPlace}
       />
 
       <fieldset>

@@ -8,6 +8,13 @@ export type Place = {
   neighborhood: string;
   cuisine: string;
   custom?: boolean;
+  address?: string;
+  googlePlaceId?: string;
+  lat?: number;
+  lng?: number;
+  photoName?: string;
+  photoAttribution?: string;
+  photoAttributionUri?: string;
 };
 
 export type Visit = {

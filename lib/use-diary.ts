@@ -71,6 +71,13 @@ export type NewPlaceInput = {
   name: string;
   neighborhood?: string;
   cuisine?: string;
+  address?: string;
+  googlePlaceId?: string;
+  lat?: number;
+  lng?: number;
+  photoName?: string;
+  photoAttribution?: string;
+  photoAttributionUri?: string;
 };
 
 export type NewVisitInput = {
@@ -118,8 +125,16 @@ export function useDiary() {
         throw new Error("Place name is required");
       }
       const current = placesStore.getSnapshot();
+      const googlePlaceId = input.googlePlaceId?.trim();
+      if (googlePlaceId) {
+        const existing = current.find(
+          (place) =>
+            place.googlePlaceId === googlePlaceId || place.id === googlePlaceId,
+        );
+        if (existing) return existing;
+      }
       const merged = mergePlaces(SEED_PLACES, current);
-      const baseId = slugifyPlaceName(name);
+      const baseId = googlePlaceId || slugifyPlaceName(name);
       const id = merged.some((place) => place.id === baseId)
         ? newId("p")
         : baseId;
@@ -130,6 +145,24 @@ export function useDiary() {
         cuisine: input.cuisine?.trim() || "other",
         custom: true,
       };
+      const address = input.address?.trim();
+      if (address) place.address = address;
+      if (googlePlaceId) place.googlePlaceId = googlePlaceId;
+      if (
+        input.lat !== undefined &&
+        input.lng !== undefined &&
+        Number.isFinite(input.lat) &&
+        Number.isFinite(input.lng)
+      ) {
+        place.lat = input.lat;
+        place.lng = input.lng;
+      }
+      const photoName = input.photoName?.trim();
+      if (photoName) place.photoName = photoName;
+      const photoAttribution = input.photoAttribution?.trim();
+      if (photoAttribution) place.photoAttribution = photoAttribution;
+      const photoAttributionUri = input.photoAttributionUri?.trim();
+      if (photoAttributionUri) place.photoAttributionUri = photoAttributionUri;
       placesStore.set([...current, place]);
       return place;
     },

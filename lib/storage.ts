@@ -21,6 +21,17 @@ function parseListIds(value: unknown): ListId[] {
   return ids;
 }
 
+function optionalString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return value;
+}
+
 function parsePlace(value: unknown): Place | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || value.id.length === 0) return null;
@@ -29,13 +40,30 @@ function parsePlace(value: unknown): Place | null {
   }
   if (typeof value.neighborhood !== "string") return null;
   if (typeof value.cuisine !== "string") return null;
-  return {
+  const place: Place = {
     id: value.id,
     name: value.name.trim(),
     neighborhood: value.neighborhood.trim(),
     cuisine: value.cuisine.trim(),
     custom: true,
   };
+  const address = optionalString(value.address);
+  if (address) place.address = address;
+  const googlePlaceId = optionalString(value.googlePlaceId);
+  if (googlePlaceId) place.googlePlaceId = googlePlaceId;
+  const lat = optionalNumber(value.lat);
+  const lng = optionalNumber(value.lng);
+  if (lat !== undefined && lng !== undefined) {
+    place.lat = lat;
+    place.lng = lng;
+  }
+  const photoName = optionalString(value.photoName);
+  if (photoName) place.photoName = photoName;
+  const photoAttribution = optionalString(value.photoAttribution);
+  if (photoAttribution) place.photoAttribution = photoAttribution;
+  const photoAttributionUri = optionalString(value.photoAttributionUri);
+  if (photoAttributionUri) place.photoAttributionUri = photoAttributionUri;
+  return place;
 }
 
 function parseSpendCents(value: unknown): number | null {

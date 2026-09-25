@@ -86,12 +86,18 @@ export function VisitReceipt({ id }: { id: string }) {
           <h1 className="mt-4 text-[15px] font-bold leading-tight">
             {placeName}
           </h1>
-          <p className="thermal-faint mt-1">
-            {place
-              ? `${place.neighborhood} · ${place.cuisine}`.toUpperCase()
-              : "REMOVED FROM THE BOOK"}
-          </p>
-          <p className="thermal-faint">{METRO.toUpperCase()}</p>
+          {place?.address ? (
+            <p className="thermal-faint mt-1">{place.address.toUpperCase()}</p>
+          ) : (
+            <>
+              <p className="thermal-faint mt-1">
+                {place
+                  ? `${place.neighborhood} · ${place.cuisine}`.toUpperCase()
+                  : "REMOVED FROM THE BOOK"}
+              </p>
+              <p className="thermal-faint">{METRO.toUpperCase()}</p>
+            </>
+          )}
         </header>
 
         <Rule double className="mt-4" />
