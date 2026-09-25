@@ -63,6 +63,13 @@ const placesStore = createClientStore(
   EMPTY_PLACES,
 );
 
+/** Last voided visit, kept in memory for one undo. Not persisted. */
+const voidedStore = createClientStore<Visit | null>(
+  () => null,
+  () => {},
+  null,
+);
+
 function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
 }
@@ -92,6 +99,42 @@ export type NewVisitInput = {
 /** A minute of slack so "now" from the form never reads as the future. */
 const FUTURE_SLACK_MS = 60_000;
 
+/** Validates form input into the stored visit fields. Throws with a short reason. */
+function cleanVisitInput(input: NewVisitInput): Omit<Visit, "id" | "createdAt"> {
+  if (!input.placeId) {
+    throw new Error("Pick a place");
+  }
+  if (
+    !Number.isInteger(input.rating) ||
+    input.rating < RATING_MIN ||
+    input.rating > RATING_MAX
+  ) {
+    throw new Error("Rate 1 to 5");
+  }
+  if (!Number.isFinite(input.visitedAt)) {
+    throw new Error("Pick when you ate");
+  }
+  if (input.visitedAt > Date.now() + FUTURE_SLACK_MS) {
+    throw new Error("That meal hasn't happened yet");
+  }
+  if (
+    input.spendCents !== null &&
+    (!Number.isInteger(input.spendCents) ||
+      input.spendCents < 0 ||
+      input.spendCents > SPEND_MAX_CENTS)
+  ) {
+    throw new Error("Check the bill amount");
+  }
+  return {
+    placeId: input.placeId,
+    rating: input.rating,
+    note: input.note.trim().slice(0, NOTE_MAX),
+    listIds: input.listIds,
+    visitedAt: input.visitedAt,
+    spendCents: input.spendCents,
+  };
+}
+
 function subscribeToNothing() {
   return () => {};
 }
@@ -111,6 +154,12 @@ export function useDiary() {
     placesStore.subscribe,
     placesStore.getSnapshot,
     placesStore.getServerSnapshot,
+  );
+
+  const lastVoided = useSyncExternalStore(
+    voidedStore.subscribe,
+    voidedStore.getSnapshot,
+    voidedStore.getServerSnapshot,
   );
 
   const places = useMemo(
@@ -170,43 +219,57 @@ export function useDiary() {
   );
 
   const logVisit = useCallback((input: NewVisitInput): Visit => {
-    if (!input.placeId) {
-      throw new Error("Pick a place");
-    }
-    if (
-      !Number.isInteger(input.rating) ||
-      input.rating < RATING_MIN ||
-      input.rating > RATING_MAX
-    ) {
-      throw new Error("Rate 1 to 5");
-    }
-    if (!Number.isFinite(input.visitedAt)) {
-      throw new Error("Pick when you ate");
-    }
-    if (input.visitedAt > Date.now() + FUTURE_SLACK_MS) {
-      throw new Error("That meal hasn't happened yet");
-    }
-    if (
-      input.spendCents !== null &&
-      (!Number.isInteger(input.spendCents) ||
-        input.spendCents < 0 ||
-        input.spendCents > SPEND_MAX_CENTS)
-    ) {
-      throw new Error("Check the bill amount");
-    }
+    const fields = cleanVisitInput(input);
     const visit: Visit = {
       id: newId("v"),
-      placeId: input.placeId,
-      rating: input.rating,
-      note: input.note.trim().slice(0, NOTE_MAX),
-      listIds: input.listIds,
-      visitedAt: input.visitedAt,
-      spendCents: input.spendCents,
+      ...fields,
       createdAt: Date.now(),
     };
     visitsStore.set(sortVisits([visit, ...visitsStore.getSnapshot()]));
+    voidedStore.set(null);
     return visit;
   }, []);
+
+  const updateVisit = useCallback(
+    (visitId: string, input: NewVisitInput): Visit => {
+      const current = visitsStore.getSnapshot();
+      const existing = current.find((visit) => visit.id === visitId);
+      if (!existing) {
+        throw new Error("That check is gone");
+      }
+      const visit: Visit = {
+        ...existing,
+        ...cleanVisitInput(input),
+        updatedAt: Date.now(),
+      };
+      visitsStore.set(
+        sortVisits(current.map((v) => (v.id === visitId ? visit : v))),
+      );
+      return visit;
+    },
+    [],
+  );
+
+  /** Removes a visit and holds it for one undo. */
+  const voidVisit = useCallback((visitId: string) => {
+    const current = visitsStore.getSnapshot();
+    const visit = current.find((v) => v.id === visitId);
+    if (!visit) return;
+    visitsStore.set(current.filter((v) => v.id !== visitId));
+    voidedStore.set(visit);
+  }, []);
+
+  const undoVoid = useCallback(() => {
+    const visit = voidedStore.getSnapshot();
+    if (!visit) return;
+    const current = visitsStore.getSnapshot();
+    if (!current.some((v) => v.id === visit.id)) {
+      visitsStore.set(sortVisits([visit, ...current]));
+    }
+    voidedStore.set(null);
+  }, []);
+
+  const dismissVoid = useCallback(() => voidedStore.set(null), []);
 
   const updateVisitLists = useCallback((visitId: string, listIds: ListId[]) => {
     visitsStore.set(
@@ -221,7 +284,12 @@ export function useDiary() {
     visits,
     places,
     addPlace,
+    lastVoided,
     logVisit,
+    updateVisit,
+    voidVisit,
+    undoVoid,
+    dismissVoid,
     updateVisitLists,
   };
 }
