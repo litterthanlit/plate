@@ -1,146 +1,190 @@
 "use client";
 
-import Link from "next/link";
-import { Barcode } from "@/components/Barcode";
-import { ReceiptRow, Rule, ThermalReceipt } from "@/components/ThermalReceipt";
-import { METRO, SEED_PLACES } from "@/lib/places";
+import { useRouter } from "next/navigation";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FocusEvent,
+} from "react";
+import { LandingCheck } from "@/components/LandingCheck";
+import type { ReceiptScene } from "@/components/three/receipt-scene";
+import type { PrintStamp } from "@/lib/receipt-print";
 import { usePrintStamp } from "@/lib/use-print-stamp";
 
-const ITEMS = [
-  {
-    name: "FIND A PLACE",
-    mod: `${SEED_PLACES.length} spots, ${METRO}`,
-    href: "/places",
-  },
-  { name: "LOG A VISIT", mod: "date, time, what it cost", href: "/log" },
-  { name: "RATE + SHORT NOTE", mod: "1-5 stars, 140 chars", href: "/log" },
-  { name: "STASH ON LISTS", mod: "date night / cheap / solo", href: "/lists" },
-] as const;
+/**
+ * "html": server render, no WebGL, or still loading.
+ * "3d": the paper is on the table; the HTML check stays for screen readers.
+ * "flat": someone asked for (or tabbed into) the plain check.
+ */
+type Phase = "html" | "3d" | "flat";
 
-const TOTALS = [
-  { label: "SUBTOTAL", value: "0.00" },
-  { label: "BOOKING FEE", value: "NONE" },
-  { label: "DELIVERY", value: "NONE" },
-  { label: "TAX 0%", value: "0.00" },
-] as const;
+const PAPER_MAX_PX = 368; // the HTML check's 23rem
+const GUTTER_PX = 16;
+
+function paperWidth() {
+  return Math.min(PAPER_MAX_PX, window.innerWidth - GUTTER_PX * 2);
+}
+
+function hasWebGL() {
+  try {
+    const probe = document.createElement("canvas");
+    return Boolean(probe.getContext("webgl2") ?? probe.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function useReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION).matches,
+    () => false,
+  );
+}
 
 export function ReceiptLanding() {
   const stamp = usePrintStamp();
+  const router = useRouter();
+  const reducedMotion = useReducedMotion();
+  const [phase, setPhase] = useState<Phase>("html");
+  const [stageHeight, setStageHeight] = useState<number | null>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<ReceiptScene | null>(null);
+  const reprintRef = useRef<((stamp: PrintStamp) => void) | null>(null);
+  const stampRef = useRef(stamp);
+  const wantsFlat = phase === "flat";
+
+  // Mount the paper once the page is interactive; tear it down for "flat".
+  useEffect(() => {
+    if (wantsFlat || !hasWebGL()) return;
+    const host = hostRef.current;
+    if (!host) return;
+    let cancelled = false;
+    let onResize: (() => void) | null = null;
+
+    (async () => {
+      const [{ createReceiptScene, STAGE_MARGIN }, { printLandingCheck }] =
+        await Promise.all([
+          import("@/components/three/receipt-scene"),
+          import("@/lib/receipt-print"),
+        ]);
+      await document.fonts.ready;
+      if (cancelled) return;
+
+      const fontFamily = getComputedStyle(document.body).fontFamily;
+      const print = (s: PrintStamp) => printLandingCheck(s, fontFamily, 4096);
+      let check = print(stampRef.current);
+      const sizeStage = () => {
+        const px = paperWidth();
+        const height = Math.round(px * check.aspect + STAGE_MARGIN * 2);
+        host.style.height = `${height}px`;
+        setStageHeight(height);
+        return px;
+      };
+
+      let scene: ReceiptScene;
+      try {
+        scene = createReceiptScene(host, check, {
+          paperPx: sizeStage(),
+          reducedMotion: window.matchMedia(REDUCED_MOTION).matches,
+          onNavigate: (href) => router.push(href),
+          onReady: () => {
+            if (!cancelled) setPhase("3d");
+          },
+        });
+      } catch {
+        return; // WebGL said yes, then no: stay on the HTML check.
+      }
+      sceneRef.current = scene;
+      reprintRef.current = (s) => {
+        check = print(s);
+        scene.setCheck(check);
+      };
+      onResize = () => scene.resize(sizeStage());
+      window.addEventListener("resize", onResize);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (onResize) window.removeEventListener("resize", onResize);
+      sceneRef.current?.dispose();
+      sceneRef.current = null;
+      reprintRef.current = null;
+      host.style.height = "";
+    };
+  }, [wantsFlat, router]);
+
+  // The stamp settles after hydration (check number, print time): reprint.
+  const stampKey = `${stamp.check}|${stamp.date}|${stamp.time}|${stamp.barcode}`;
+  useEffect(() => {
+    stampRef.current = stamp;
+    reprintRef.current?.(stamp);
+    // stampKey stands in for the fresh-every-render stamp object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stampKey]);
+
+  // Tabbing into the hidden check means a keyboard user: show it for real.
+  function handleFocus(event: FocusEvent<HTMLDivElement>) {
+    if (phase === "3d" && event.target.matches(":focus-visible")) {
+      setPhase("flat");
+    }
+  }
+
+  const live = phase === "3d";
 
   return (
-    <div className="table-top flex min-h-full flex-1 items-start justify-center px-4 py-12 sm:py-20">
-      <ThermalReceipt label="Plate guest check">
-        <header className="text-center">
-          <h1 className="print-double text-[1.5rem] font-bold leading-none">
-            PLATE
-          </h1>
-          <p className="mt-3">DIARY FOR MEALS OUT</p>
-          <p className="thermal-faint">PORTLAND, OR · EST. 2026</p>
-          <p className="thermal-faint">DATA STAYS ON THIS DEVICE</p>
-        </header>
+    <div className="table-top relative flex min-h-full flex-1 flex-col items-center overflow-x-clip px-4 py-12 sm:py-20">
+      {live ? (
+        <p className="flex items-center gap-4 text-[10px] uppercase tracking-[0.16em] text-ink/50">
+          <span>Drag the paper · tap a line</span>
+          <button
+            type="button"
+            onClick={() => setPhase("flat")}
+            className="receipt-line uppercase text-ink/70 underline underline-offset-2 hover:text-ink"
+          >
+            Flat copy
+          </button>
+        </p>
+      ) : null}
 
-        <Rule double className="mt-4" />
+      {phase !== "flat" ? (
+        <div
+          ref={hostRef}
+          className={`-mx-4 w-screen max-w-none self-center ${
+            live
+              ? `opacity-100 ${reducedMotion ? "" : "transition-opacity duration-500"}`
+              : "pointer-events-none absolute top-0 opacity-0"
+          }`}
+          style={stageHeight ? { height: stageHeight } : undefined}
+        />
+      ) : null}
 
-        <dl className="grid grid-cols-2 tabular-nums">
-          <div className="flex gap-2">
-            <dt>CHK</dt>
-            <dd>{stamp.check}</dd>
-          </div>
-          <div className="flex justify-end gap-2">
-            <dt>TBL</dt>
-            <dd>12</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt>SVR</dt>
-            <dd>YOU</dd>
-          </div>
-          <div className="flex justify-end gap-2">
-            <dt>GST</dt>
-            <dd>1</dd>
-          </div>
-          <div className="col-span-2 flex justify-between">
-            <dt className="sr-only">Printed</dt>
-            <dd>{stamp.date}</dd>
-            <dd>{stamp.time}</dd>
-          </div>
-        </dl>
+      <div
+        onFocus={handleFocus}
+        className={live ? "sr-only" : "flex w-full justify-center"}
+      >
+        <LandingCheck stamp={stamp} />
+      </div>
 
-        <Rule className="mt-1" />
-
-        <div className="flex thermal-faint" aria-hidden="true">
-          <span className="w-7">QTY</span>
-          <span className="flex-1">ITEM</span>
-          <span>AMT</span>
-        </div>
-
-        <ul className="mt-1 space-y-1">
-          {ITEMS.map((item) => (
-            <li key={item.name}>
-              <Link
-                href={item.href}
-                className="receipt-line group flex items-baseline"
-              >
-                <span className="w-7 tabular-nums">1</span>
-                <span className="flex-1 group-hover:underline group-hover:underline-offset-2">
-                  {item.name}
-                </span>
-                <span className="tabular-nums">0.00</span>
-              </Link>
-              {item.mod ? (
-                <p className="thermal-faint pl-7">&gt; {item.mod}</p>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-
-        <Rule className="mt-3" />
-
-        <dl>
-          {TOTALS.map((row) => (
-            <ReceiptRow key={row.label} left={row.label} right={row.value} />
-          ))}
-        </dl>
-
-        <Rule double className="mt-1" />
-
-        <dl>
-          <ReceiptRow
-            left="TOTAL"
-            right="$0.00"
-            className="print-double-tall text-[14px] font-bold"
-          />
-          <ReceiptRow left="YOU GET" right="YOUR TASTE, NEARBY" className="mt-1" />
-        </dl>
-
-        <Rule className="mt-3" />
-
-        <div className="mt-4 space-y-3">
-          <Link href="/log" className="stamp-btn">
-            Start a diary
-          </Link>
-          <Link href="/diary" className="receipt-line block text-center">
-            OPEN YOUR DIARY &gt;
-          </Link>
-        </div>
-
-        <Rule className="mt-4" />
-
-        <footer className="text-center">
-          <p className="mt-2 font-bold">*** THANK YOU ***</p>
-          <p className="mt-1 thermal-faint">
-            NO BOOKING · NO DELIVERY
-            <br />
-            JUST WHERE YOU ATE
-          </p>
-          <div className="mx-auto mt-5 w-4/5">
-            <Barcode value={stamp.barcode} />
-            <p className="mt-1 tracking-[0.3em] tabular-nums">
-              {stamp.barcode}
-            </p>
-          </div>
-          <p className="mt-4 thermal-faint">CUSTOMER COPY</p>
-        </footer>
-      </ThermalReceipt>
+      {phase === "flat" ? (
+        <button
+          type="button"
+          onClick={() => setPhase("html")}
+          className="receipt-line mt-6 text-[10px] uppercase tracking-[0.16em] text-ink/60 underline underline-offset-2 hover:text-ink"
+        >
+          Pick it up
+        </button>
+      ) : null}
     </div>
   );
 }
