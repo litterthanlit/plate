@@ -24,6 +24,27 @@ export function ThermalReceipt({
   );
 }
 
+/**
+ * A long sheet off the same roll, for screens with forms and feeds. Paper is
+ * a layer behind the content, so nothing on it gets clipped by the tear.
+ */
+export function ThermalSheet({
+  className = "",
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`thermal-sheet ${className}`}>
+      <div className="thermal-sheet__lift" aria-hidden="true">
+        <div className="thermal-sheet__paper" />
+      </div>
+      <div className="thermal-sheet__body">{children}</div>
+    </div>
+  );
+}
+
 /** Printed character rule: `----` or `====`. */
 export function Rule({
   double = false,

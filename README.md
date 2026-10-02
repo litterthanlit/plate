@@ -6,6 +6,10 @@ v1 loop: find a place → log a visit → rate + short note → lists.
 
 Portland is the first metro. Data stays in your browser.
 
+## Backup
+
+`/backup` downloads the diary as one JSON file (`plate-diary-YYYY-MM-DD.json`: visits plus saved places, `version: 1`) and loads one back. Loading previews the change first. **Add** keeps everything here and takes the newer edit of any visit both sides have. **Replace** swaps the diary for the copy. Every record goes through the same validation as `localStorage`, so a hand-edited file can't break the app.
+
 ## Run
 
 ```bash

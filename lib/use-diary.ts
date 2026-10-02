@@ -8,6 +8,7 @@ import {
   saveCustomPlaces,
   saveVisits,
 } from "./storage";
+import { planRestore, type BackupMode, type ParsedBackup } from "./backup";
 import type { ListId, Place, Visit } from "./types";
 import { NOTE_MAX, RATING_MAX, RATING_MIN, SPEND_MAX_CENTS } from "./types";
 import { sortVisits } from "./diary";
@@ -47,9 +48,10 @@ function createClientStore<T>(
     return empty;
   }
 
+  /** Saves first, so a failed write (quota) leaves the snapshot untouched. */
   function set(next: T) {
-    snapshot = next;
     save(next);
+    snapshot = next;
     emit();
   }
 
@@ -279,8 +281,35 @@ export function useDiary() {
     );
   }, []);
 
+  /** Writes a parsed backup into this device's diary. Throws with a short reason. */
+  const restoreBackup = useCallback(
+    (backup: ParsedBackup, mode: BackupMode) => {
+      const prevPlaces = placesStore.getSnapshot();
+      const plan = planRestore(
+        { visits: visitsStore.getSnapshot(), places: prevPlaces },
+        backup,
+        mode,
+      );
+      try {
+        placesStore.set(plan.places);
+        try {
+          visitsStore.set(plan.visits);
+        } catch (caught) {
+          placesStore.set(prevPlaces);
+          throw caught;
+        }
+      } catch {
+        throw new Error("This browser is out of room. Nothing changed.");
+      }
+      voidedStore.set(null);
+      return plan;
+    },
+    [],
+  );
+
   return {
     ready: hydrated,
+    customPlaces,
     visits,
     places,
     addPlace,
@@ -291,5 +320,6 @@ export function useDiary() {
     undoVoid,
     dismissVoid,
     updateVisitLists,
+    restoreBackup,
   };
 }

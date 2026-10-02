@@ -19,7 +19,12 @@ const CODE39: Record<string, string> = {
 const NARROW = 1;
 const WIDE = 2.5;
 
-export function Barcode({ value }: { value: string }) {
+/** Bars in narrow-module units. `width` is the full symbol width. */
+export function code39Bars(value: string): {
+  digits: string;
+  bars: { x: number; w: number }[];
+  width: number;
+} {
   const digits = value.replace(/\D/g, "");
   const bars: { x: number; w: number }[] = [];
   let x = 0;
@@ -33,6 +38,11 @@ export function Barcode({ value }: { value: string }) {
     }
     x += NARROW; // inter-character gap
   }
+  return { digits, bars, width: x };
+}
+
+export function Barcode({ value }: { value: string }) {
+  const { digits, bars, width: x } = code39Bars(value);
 
   return (
     <svg
