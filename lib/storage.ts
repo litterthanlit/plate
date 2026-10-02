@@ -32,7 +32,7 @@ function optionalNumber(value: unknown): number | undefined {
   return value;
 }
 
-function parsePlace(value: unknown): Place | null {
+export function parsePlace(value: unknown): Place | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || value.id.length === 0) return null;
   if (typeof value.name !== "string" || value.name.trim().length === 0) {
@@ -72,7 +72,7 @@ function parseSpendCents(value: unknown): number | null {
   return value;
 }
 
-function parseVisit(value: unknown): Visit | null {
+export function parseVisit(value: unknown): Visit | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || value.id.length === 0) return null;
   if (typeof value.placeId !== "string" || value.placeId.length === 0) {

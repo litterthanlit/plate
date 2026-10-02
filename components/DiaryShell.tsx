@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/log", label: "log" },
   { href: "/diary", label: "diary" },
   { href: "/lists", label: "lists" },
+  { href: "/backup", label: "backup" },
 ] as const;
 
 export function DiaryShell({
