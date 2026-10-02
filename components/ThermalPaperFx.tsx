@@ -1,4 +1,4 @@
-/** Landing-only paper surface. Diary screens stay on the plain `.receipt` sheet. */
+/** Paper surface for one fixed-size check. Long diary sheets tile it in CSS instead. */
 export function ThermalPaperFx() {
   return (
     <div className="thermal-fx" aria-hidden="true">
